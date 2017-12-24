@@ -1,18 +1,23 @@
 var canvasWidth = window.innerWidth;
 var canvasHeight = window.innerHeight;
 var iterCount = 0;
-var nRings = 10;
+var nRings = 30;
 var ringWidth = 3; // stroke width for each ring
 var ringColor;
 var ringRadius = 1.2*canvasWidth; // max ring radius
 var viewingDistance = 0.2; // viewing distance from screen
-var maxDistance = 5; // initial distance from circle
+var maxDistance = 50; // initial distance from circle
 var maxTime = 600; // animation length
-var posStep = 1; // movement speed
+var iterStep = 1; // movement speed
 var maxPosStep = 10; // maximum velocity
 var ringOffsets; // horizontal offset of each ring
 var maxRingOffset = 10;
 var curRingIndex = nRings-1; // index of most distant ring
+
+var hOffAmp = 50;
+var vOffAmp = 50;
+var vOffPer = 0.5;
+var hOffPer = 0.5;
 
 function setup() {
    var canvas = createCanvas(canvasWidth, canvasHeight);
@@ -30,8 +35,7 @@ function setup() {
 
 function draw() {
    background(51);
-   // iterCount = (iterCount + posStep) % posStep*1000;
-   iterCount += posStep;
+   iterCount += iterStep;
    drawRings();
 }
 
@@ -48,9 +52,21 @@ function getRingRadius(z_t, r_true) {
    return viewingDistance*r_true/z_t;
 }
 
-function getRingCenter(ringIndex, z_t) {
+function getRingHorizOffset(ringIndex, t, z_t) {
+   return hOffAmp*sin(TWO_PI*t/(hOffPer*maxTime));
+
    x_true_t = ringOffsets[ringIndex];
-   // console.log(x_true_t);
+   if (x_true_t > 0) {
+      return 30*getRingRadius(z_t, x_true_t);
+   } else {
+      return 0;
+   }
+}
+
+function getRingVertOffset(ringIndex, t, z_t) {
+   return vOffAmp*cos(TWO_PI*t/(vOffPer*maxTime));
+
+   x_true_t = ringOffsets[ringIndex];
    if (x_true_t > 0) {
       return 30*getRingRadius(z_t, x_true_t);
    } else {
@@ -64,9 +80,8 @@ function getRingColor(t) {
    return color(R, G, 0);
 }
 
-function drawRing(x_t, r_t, c_t) {
+function drawRing(x_t, y_t, r_t, c_t) {
    stroke(c_t);
-   y_t = 0;
    arc(x_t + canvasWidth/2, y_t + canvasHeight/2,
       r_t, r_t, 0, TWO_PI);
 }
@@ -86,27 +101,36 @@ function drawRings() {
       }
       z_t = getRingDistance(t);
       r_t = getRingRadius(z_t, ringRadius);
-      x_t = getRingCenter(j, z_t);
+      x_t = getRingHorizOffset(j, t, z_t);
+      y_t = getRingVertOffset(j, t, z_t);
       c_t = getRingColor(t);
-      drawRing(x_t, r_t, c_t);
+      drawRing(x_t, y_t, r_t, c_t);
    }
 }
 
 function keyPressed() {
    if (keyCode === LEFT_ARROW) {
+      // vOffAmp += 5;
+      // hOffAmp += 5;
+      vOffPer += 0.5;
+      hOffPer += 0.5;
       if (-ringOffsets[curRingIndex] < maxRingOffset) {
          ringOffsets[curRingIndex] -= 1;
       }
    }
    if (keyCode === RIGHT_ARROW) {
+      // vOffAmp -= 5;
+      // hOffAmp -= 5;
+      vOffPer -= 0.5;
+      hOffPer -= 0.5;
       if (ringOffsets[curRingIndex] < maxRingOffset) {
          ringOffsets[curRingIndex] += 1;
       }
    }
    if (keyCode === UP_ARROW) {
-      if (posStep < maxPosStep) { posStep += 1; }
+      if (iterStep < maxPosStep) { iterStep += 1/2; }
    }
    if (keyCode === DOWN_ARROW) {
-      if (posStep > 0) { posStep -= 1; }
+      if (iterStep > 0) { iterStep -= 1/2; }
    }
 }
